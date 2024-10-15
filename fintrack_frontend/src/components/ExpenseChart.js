@@ -8,7 +8,6 @@ function ExpenseChart() {
   useEffect(() => {
     axios.get('/api/expenses/')
       .then(res => {
-        // Aggregate expenses by category
         const categories = {};
         res.data.forEach(expense => {
           if (categories[expense.category]) {
@@ -23,31 +22,32 @@ function ExpenseChart() {
         }));
         setData(chartData);
       })
-      .catch(err => {
-        console.log(err);
-      });
+      .catch(err => console.log(err));
   }, []);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AA336A'];
 
   return (
-    <PieChart width={400} height={400}>
-      <Pie
-        dataKey="value"
-        data={data}
-        cx={200}
-        cy={200}
-        outerRadius={150}
-        fill="#8884d8"
-        label
-      >
-        {data.map((entry, index) => (
-          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-        ))}
-      </Pie>
-      <Tooltip />
-      <Legend />
-    </PieChart>
+    <div>
+      <h3>Expenses by Category</h3>
+      <PieChart width={400} height={400}>
+        <Pie
+          dataKey="value"
+          data={data}
+          cx={200}
+          cy={200}
+          outerRadius={150}
+          fill="#8884d8"
+          label
+        >
+          {data.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+          ))}
+        </Pie>
+        <Tooltip />
+        <Legend />
+      </PieChart>
+    </div>
   );
 }
 

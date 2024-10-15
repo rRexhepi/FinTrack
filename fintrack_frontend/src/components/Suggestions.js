@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Typography, List, ListItem, ListItemText } from '@mui/material';
 
 function Suggestions() {
   const [suggestions, setSuggestions] = useState([]);
@@ -9,22 +10,26 @@ function Suggestions() {
       .then(res => {
         setSuggestions(res.data.suggestions);
       })
-      .catch(err => {
-        console.log(err);
-      });
+      .catch(err => console.log(err));
   }, []);
 
   return (
     <div>
-      <h2>Financial Suggestions</h2>
+      <Typography variant="h5" gutterBottom>
+        Financial Suggestions
+      </Typography>
       {suggestions.length > 0 ? (
-        <ul>
+        <List>
           {suggestions.map((message, index) => (
-            <li key={index}>{message}</li>
+            <ListItem key={index}>
+              <ListItemText primary={message} />
+            </ListItem>
           ))}
-        </ul>
+        </List>
       ) : (
-        <p>No suggestions at this time. Keep up the good work!</p>
+        <Typography variant="body1">
+          No suggestions at this time. Keep up the good work!
+        </Typography>
       )}
     </div>
   );
