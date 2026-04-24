@@ -1,6 +1,6 @@
-from django.db import models
 from django.contrib.auth.models import User
-import yfinance as yf
+from django.db import models
+
 
 class Expense(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='expenses')
@@ -17,6 +17,7 @@ class Expense(models.Model):
     def __str__(self):
         return f"{self.category} - ${self.amount:.2f} on {self.date}"
 
+
 class Investment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='investments')
     name = models.CharField(max_length=100)
@@ -29,30 +30,9 @@ class Investment(models.Model):
         verbose_name = 'Investment'
         verbose_name_plural = 'Investments'
 
-    @property
-    def purchase_price_per_share(self):
-        try:
-            data = yf.Ticker(self.ticker)
-            historical_data = data.history(start=self.date_invested, end=self.date_invested)
-            if not historical_data.empty:
-                return historical_data['Close'][0]
-        except Exception as e:
-            print(f"Error fetching purchase price for {self.ticker}: {e}")
-        return 0
-
-    @property
-    def current_value(self):
-        try:
-            data = yf.Ticker(self.ticker)
-            current_price = data.history(period='1d')['Close'][0]
-            shares = self.amount_invested / self.purchase_price_per_share if self.purchase_price_per_share else 0
-            return current_price * shares
-        except Exception as e:
-            print(f"Error fetching current value for {self.ticker}: {e}")
-        return 0
-
     def __str__(self):
         return f"{self.name} ({self.ticker})"
+
 
 class Budget(models.Model):
     PERIOD_CHOICES = [
@@ -73,6 +53,7 @@ class Budget(models.Model):
 
     def __str__(self):
         return f"{self.category} - ${self.amount:.2f} per {self.period}"
+
 
 class Suggestion(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='suggestions')
