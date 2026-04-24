@@ -115,9 +115,9 @@ What a reviewer would expect from a full-stack Django portfolio project:
       per instance — N+1 on the dashboard list)
 - [ ] Expanded test suite: investment serializer with mocked `yfinance`,
       validation edge cases, JWT flow
-- [x] GitHub Actions CI: Django check + test (+ Docker build)
+- [x] GitHub Actions CI: ruff lint + Django check + test + Docker build
 - [x] Dockerfile + `docker-compose.yaml` (app + Postgres)
-- [ ] Lint (ruff) added to CI
+- [x] Lint (ruff) added to CI
 
 ## License
 

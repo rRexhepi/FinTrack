@@ -15,6 +15,7 @@ from rest_framework.test import APIClient
 from . import market_data
 from .models import Budget, Expense, Investment
 
+
 class ExpenseModelTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='testuser', password='testpass')

@@ -1,0 +1,5 @@
+# Dev-only tooling: lint, test helpers. CI installs this on top of the
+# runtime requirements.
+-r requirements.txt
+
+ruff==0.7.1
