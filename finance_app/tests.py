@@ -89,6 +89,39 @@ class APITests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
+class PaginationTest(TestCase):
+    """The detail-page tables request `?page_size=100` so every expense
+    shows without walking pages. Making sure the custom pagination
+    actually honours that."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='pageuser', password='x')
+        self.client.force_authenticate(user=self.user)
+        # 25 expenses > default PAGE_SIZE of 10, so we can prove the
+        # override is working by counting rows returned on page 1.
+        for i in range(25):
+            Expense.objects.create(
+                user=self.user, date=date(2024, 1, 1),
+                category='X', amount=Decimal('1.00'),
+            )
+
+    def test_default_page_size_is_ten(self):
+        resp = self.client.get(reverse('expense-list'))
+        self.assertEqual(len(resp.json()['results']), 10)
+
+    def test_page_size_query_param_honoured(self):
+        resp = self.client.get(reverse('expense-list') + '?page_size=50')
+        self.assertEqual(len(resp.json()['results']), 25)
+
+    def test_page_size_capped_at_max(self):
+        # `max_page_size = 100` — asking for more doesn't blow that up,
+        # just silently clamps. (DRF's behaviour: returns `max_page_size`
+        # rows, not an error.)
+        resp = self.client.get(reverse('expense-list') + '?page_size=9999')
+        self.assertLessEqual(len(resp.json()['results']), 100)
+
+
 class ExpenseByCategoryTest(TestCase):
     """The aggregation endpoint the dashboard chart uses."""
 

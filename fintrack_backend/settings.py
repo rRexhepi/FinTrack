@@ -151,9 +151,11 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    # Pagination Settings
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,  # Set the number of items per page
+    # `finance_app.pagination.DefaultPagination` honours `?page_size=`
+    # (capped at 100) so the detail-page tables can ask for the full
+    # history in one call instead of walking pages.
+    'DEFAULT_PAGINATION_CLASS': 'finance_app.pagination.DefaultPagination',
+    'PAGE_SIZE': 10,
 }
 
 # Cache backend used by `finance_app.market_data` to memoise yfinance
