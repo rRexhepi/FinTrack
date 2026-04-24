@@ -31,8 +31,16 @@ from django.core.cache import cache
 logger = logging.getLogger(__name__)
 
 CURRENT_PRICE_TTL = 300  # 5 min — balance freshness against rate limits.
+FAILURE_TTL = 60  # negative-cache a failed lookup so every dashboard
+#                   page load doesn't eat another yfinance timeout per
+#                   ticker when Yahoo's rate-limiting our IP.
 HISTORICAL_PRICE_TTL = 24 * 60 * 60  # 24 hr — historical closes don't move.
 _PRICE_WINDOW_DAYS = 5  # pad historical fetch to dodge market holidays.
+
+# Sentinel that lets us distinguish "nothing cached yet" from "we cached
+# a failure (None) last time" — `cache.get` returns None for both by
+# default, which is the reason this module kept re-hitting yfinance.
+_CACHE_MISS = object()
 
 
 def _current_cache_key(ticker: str) -> str:
@@ -60,18 +68,21 @@ def get_current_price(ticker: str) -> Decimal | None:
     if not ticker:
         return None
     key = _current_cache_key(ticker)
-    cached = cache.get(key)
-    if cached is not None:
+    cached = cache.get(key, _CACHE_MISS)
+    if cached is not _CACHE_MISS:
         return cached
     try:
         df = yf.Ticker(ticker).history(period="1d")
     except Exception as exc:
         logger.warning("yfinance current_price failed for %s: %s", ticker, exc)
+        cache.set(key, None, FAILURE_TTL)
         return None
     if df.empty:
+        cache.set(key, None, FAILURE_TTL)
         return None
     price = _to_decimal(df["Close"].iloc[-1])
     if price is None:
+        cache.set(key, None, FAILURE_TTL)
         return None
     cache.set(key, price, CURRENT_PRICE_TTL)
     return price
@@ -101,8 +112,8 @@ def get_price_on_date(ticker: str, target: date) -> Decimal | None:
     if not ticker or target is None:
         return None
     key = _historical_cache_key(ticker, target)
-    cached = cache.get(key)
-    if cached is not None:
+    cached = cache.get(key, _CACHE_MISS)
+    if cached is not _CACHE_MISS:
         return cached
     start = target - timedelta(days=_PRICE_WINDOW_DAYS)
     end = target + timedelta(days=_PRICE_WINDOW_DAYS)
@@ -112,13 +123,16 @@ def get_price_on_date(ticker: str, target: date) -> Decimal | None:
         logger.warning(
             "yfinance historical failed for %s on %s: %s", ticker, target, exc
         )
+        cache.set(key, None, FAILURE_TTL)
         return None
     if df.empty:
+        cache.set(key, None, FAILURE_TTL)
         return None
     on_or_before = df[df.index.date <= target]
     row = on_or_before if not on_or_before.empty else df
     price = _to_decimal(row["Close"].iloc[-1])
     if price is None:
+        cache.set(key, None, FAILURE_TTL)
         return None
     cache.set(key, price, HISTORICAL_PRICE_TTL)
     return price

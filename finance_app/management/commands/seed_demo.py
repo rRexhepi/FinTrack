@@ -123,15 +123,20 @@ class Command(BaseCommand):
             for cat, amt, period in budgets
         ])
 
-        Suggestion.objects.create(
-            user=user,
-            message=(
-                "You've spent 68% of your Dining Out budget with 2 weeks left "
-                "in the month — consider cooking a few more meals at home."
-            ),
-        )
+        suggestion_messages = [
+            "Groceries is your largest recurring category — batching a weekend "
+            "haul rather than topping up mid-week tends to cut the total.",
+            "Dining Out is pacing close to its budget. Not alarming yet, but "
+            "worth keeping an eye on before weekend plans land.",
+            "Entertainment is comfortably under budget — you've got headroom "
+            "for a night out without denting the rest of the month.",
+        ]
+        Suggestion.objects.bulk_create([
+            Suggestion(user=user, message=msg) for msg in suggestion_messages
+        ])
 
         self.stdout.write(self.style.SUCCESS(
             f"Seeded {len(expenses)} expenses, {len(investments)} investments, "
-            f"{len(budgets)} budgets, 1 suggestion for '{username}'."
+            f"{len(budgets)} budgets, {len(suggestion_messages)} suggestions "
+            f"for '{username}'."
         ))
