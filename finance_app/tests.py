@@ -88,6 +88,67 @@ class APITests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
+class ExpenseByCategoryTest(TestCase):
+    """The aggregation endpoint the dashboard chart uses."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='chartuser', password='x')
+        self.client.force_authenticate(user=self.user)
+
+        # 12 expenses across 3 categories — deliberately more than the
+        # default PAGE_SIZE (10) so a broken implementation that read the
+        # paginated list would miss rows on page 2.
+        rows = [
+            ('Groceries',     '100.00'),
+            ('Groceries',     '50.00'),
+            ('Groceries',     '25.00'),
+            ('Dining Out',    '40.00'),
+            ('Dining Out',    '60.00'),
+            ('Transportation', '15.00'),
+            ('Transportation', '35.00'),
+            ('Groceries',     '10.00'),
+            ('Dining Out',    '20.00'),
+            ('Groceries',     '5.00'),
+            ('Transportation', '50.00'),
+            ('Groceries',     '75.00'),
+        ]
+        for i, (cat, amt) in enumerate(rows):
+            Expense.objects.create(
+                user=self.user,
+                date=date(2024, 1, 1),
+                category=cat,
+                amount=Decimal(amt),
+            )
+
+    def test_totals_span_entire_expense_history(self):
+        resp = self.client.get('/api/expenses/by-category/')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        totals = {row['category']: row['total'] for row in resp.json()}
+        # 265 total for Groceries across 6 rows — spanning the paginated
+        # page boundary is the whole point of this endpoint.
+        self.assertEqual(totals, {
+            'Groceries': 265.0,
+            'Dining Out': 120.0,
+            'Transportation': 100.0,
+        })
+
+    def test_scoped_to_requesting_user(self):
+        other = User.objects.create_user(username='someone_else', password='x')
+        Expense.objects.create(
+            user=other, date=date(2024, 1, 1),
+            category='Groceries', amount=Decimal('9999.00'),
+        )
+        resp = self.client.get('/api/expenses/by-category/')
+        totals = {row['category']: row['total'] for row in resp.json()}
+        self.assertEqual(totals['Groceries'], 265.0)
+
+    def test_requires_auth(self):
+        self.client.force_authenticate(user=None)
+        resp = self.client.get('/api/expenses/by-category/')
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
 class MarketDataTest(TestCase):
     """Unit tests for the yfinance wrapper + cache."""
 
@@ -121,6 +182,28 @@ class MarketDataTest(TestCase):
         ticker_mock.history.return_value = pd.DataFrame(columns=['Close'])
         with patch('finance_app.market_data.yf.Ticker', return_value=ticker_mock):
             self.assertIsNone(market_data.get_current_price('NOPE'))
+
+    def test_failed_lookup_is_cached(self):
+        """A failure caches `None` so we don't retry yfinance on every
+        page load when Yahoo's rate-limiting us."""
+        ticker_mock = MagicMock()
+        ticker_mock.history.side_effect = RuntimeError('rate limited')
+        with patch('finance_app.market_data.yf.Ticker', return_value=ticker_mock) as yf_ticker:
+            first = market_data.get_current_price('AAPL')
+            second = market_data.get_current_price('AAPL')
+        self.assertIsNone(first)
+        self.assertIsNone(second)
+        # Single yfinance hit, not two.
+        self.assertEqual(yf_ticker.call_count, 1)
+
+    def test_empty_frame_is_cached_too(self):
+        """Same negative-cache story for the 'possibly delisted' path."""
+        ticker_mock = MagicMock()
+        ticker_mock.history.return_value = pd.DataFrame(columns=['Close'])
+        with patch('finance_app.market_data.yf.Ticker', return_value=ticker_mock) as yf_ticker:
+            market_data.get_current_price('NOPE')
+            market_data.get_current_price('NOPE')
+        self.assertEqual(yf_ticker.call_count, 1)
 
     def test_current_prices_dedupes_and_batches(self):
         ticker_mock = MagicMock()
@@ -310,7 +393,7 @@ class SeedDemoCommandTest(TestCase):
         self.assertEqual(demo.expenses.count(), 14)
         self.assertEqual(demo.investments.count(), 5)
         self.assertEqual(demo.budgets.count(), 4)
-        self.assertEqual(demo.suggestions.count(), 1)
+        self.assertEqual(demo.suggestions.count(), 3)
 
     def test_rerun_is_noop(self):
         self._run()

@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.db.models import Sum
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -25,6 +26,24 @@ class ExpenseViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['get'], url_path='by-category')
+    def by_category(self, request):
+        # SQL-side aggregate for the dashboard pie chart. Returns one row
+        # per category instead of the paginated expense list, which the
+        # chart was misusing: at PAGE_SIZE=10 it only ever saw the first
+        # page and under-reported categories with rows further back.
+        rows = (
+            Expense.objects
+            .filter(user=request.user)
+            .values('category')
+            .annotate(total=Sum('amount'))
+            .order_by('-total')
+        )
+        return Response([
+            {'category': row['category'], 'total': float(row['total'])}
+            for row in rows
+        ])
 
 
 class InvestmentViewSet(viewsets.ModelViewSet):
