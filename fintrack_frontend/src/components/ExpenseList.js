@@ -1,29 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Typography } from '@mui/material';
+
+import api from '../api';
 import AddExpense from './AddExpense';
 
 function ExpenseList() {
   const [expenses, setExpenses] = useState([]);
 
-  const fetchExpenses = () => {
-    fetch('/api/expenses/')
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Failed to fetch expenses');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setExpenses(data);
-      })
-      .catch((error) => {
-        console.error('Error fetching expenses:', error);
-      });
-  };
+  const fetchExpenses = useCallback(() => {
+    api
+      .get('/api/expenses/')
+      .then((res) => setExpenses(res.data.results || []))
+      .catch((err) => console.error('expenses', err));
+  }, []);
 
   useEffect(() => {
     fetchExpenses();
-  }, []);
+  }, [fetchExpenses]);
 
   return (
     <div>
@@ -31,11 +24,11 @@ function ExpenseList() {
         Expenses
       </Typography>
       <AddExpense refreshExpenses={fetchExpenses} />
-      {/* Render the list of expenses */}
       <ul>
         {expenses.map((expense) => (
           <li key={expense.id}>
-            {expense.date}: {expense.category} - ${expense.amount}
+            {expense.date}: {expense.category} — ${expense.amount}
+            {expense.description ? ` (${expense.description})` : ''}
           </li>
         ))}
       </ul>

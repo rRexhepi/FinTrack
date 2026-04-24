@@ -3,6 +3,8 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { TextField, Button, Box } from '@mui/material';
 
+import api from '../api';
+
 function AddExpenseForm({ handleClose, refreshExpenses }) {
   const formik = useFormik({
     initialValues: {
@@ -20,34 +22,17 @@ function AddExpenseForm({ handleClose, refreshExpenses }) {
       description: Yup.string(),
     }),
     onSubmit: (values, { setSubmitting, resetForm }) => {
-      fetch('/api/expenses/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Include authentication headers if necessary
-          // 'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(values),
-      })
-        .then((response) => {
-          if (!response.ok) {
-            return response.json().then((data) => {
-              throw new Error(data.detail || 'An error occurred');
-            });
-          }
-          return response.json();
-        })
-        .then((data) => {
-          setSubmitting(false);
+      api
+        .post('/api/expenses/', values)
+        .then(() => {
           resetForm();
-          handleClose(); // Close the dialog
-          refreshExpenses(); // Refresh the expenses list
+          handleClose();
+          refreshExpenses();
         })
         .catch((error) => {
-          setSubmitting(false);
-          console.error('There was an error adding the expense!', error);
-          // Optionally, display error messages to the user
-        });
+          console.error('add expense failed', error);
+        })
+        .finally(() => setSubmitting(false));
     },
   });
 

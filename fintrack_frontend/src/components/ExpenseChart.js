@@ -1,31 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+
+import api from '../api';
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AA336A', '#8884d8'];
 
 function ExpenseChart() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    axios.get('/api/expenses/')
-      .then(res => {
+    api
+      .get('/api/expenses/')
+      .then((res) => {
+        const results = res.data.results || [];
         const categories = {};
-        res.data.forEach(expense => {
-          if (categories[expense.category]) {
-            categories[expense.category] += parseFloat(expense.amount);
-          } else {
-            categories[expense.category] = parseFloat(expense.amount);
-          }
+        results.forEach((expense) => {
+          const amt = parseFloat(expense.amount || 0);
+          categories[expense.category] = (categories[expense.category] || 0) + amt;
         });
-        const chartData = Object.keys(categories).map(key => ({
-          name: key,
-          value: categories[key],
+        const chartData = Object.entries(categories).map(([name, value]) => ({
+          name,
+          value: Number(value.toFixed(2)),
         }));
         setData(chartData);
       })
-      .catch(err => console.log(err));
+      .catch((err) => console.error('expense chart', err));
   }, []);
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AA336A'];
 
   return (
     <div>

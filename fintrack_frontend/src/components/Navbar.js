@@ -1,8 +1,17 @@
 import React from 'react';
 import { AppBar, Toolbar, Typography, Button } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+
+import { logout } from '../api';
 
 function Navbar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
+
   return (
     <AppBar position="static">
       <Toolbar>
@@ -18,7 +27,9 @@ function Navbar() {
         <Button color="inherit" component={Link} to="/investments">
           Investments
         </Button>
-        {/* Add more navigation links as needed */}
+        <Button color="inherit" onClick={handleLogout}>
+          Logout
+        </Button>
       </Toolbar>
     </AppBar>
   );

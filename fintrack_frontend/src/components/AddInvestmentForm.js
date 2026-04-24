@@ -3,6 +3,8 @@ import { Button, TextField, Grid } from '@mui/material';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
+import api from '../api';
+
 const validationSchema = yup.object({
   name: yup.string('Enter investment name').required('Name is required'),
   ticker: yup.string('Enter ticker symbol').required('Ticker is required'),
@@ -26,37 +28,17 @@ function AddInvestmentForm({ handleClose, refreshInvestments }) {
     },
     validationSchema: validationSchema,
     onSubmit: (values, { setSubmitting, resetForm }) => {
-      // Replace axios with fetch
-      //const token = localStorage.getItem('access_token'); // If authentication is required
-
-      fetch('/api/investments/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Include the authorization header if required
-          // 'Authorization': token ? `Bearer ${token}` : '',
-        },
-        body: JSON.stringify(values),
-      })
-        .then((response) => {
-          if (!response.ok) {
-            return response.json().then((data) => {
-              throw new Error(data.detail || 'An error occurred');
-            });
-          }
-          return response.json();
-        })
-        .then((data) => {
-          setSubmitting(false);
+      api
+        .post('/api/investments/', values)
+        .then(() => {
           resetForm();
           handleClose();
-          refreshInvestments(); // Refresh the investments list
+          refreshInvestments();
         })
         .catch((error) => {
-          setSubmitting(false);
-          console.error('There was an error adding the investment!', error);
-          // Optionally, display error messages to the user
-        });
+          console.error('add investment failed', error);
+        })
+        .finally(() => setSubmitting(false));
     },
   });
 
