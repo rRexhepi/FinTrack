@@ -1,29 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Typography } from '@mui/material';
+
+import api from '../api';
 import AddInvestment from './AddInvestment';
 
 function InvestmentList() {
   const [investments, setInvestments] = useState([]);
 
-  const fetchInvestments = () => {
-    fetch('/api/investments/')
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Failed to fetch investments');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setInvestments(data);
-      })
-      .catch((error) => {
-        console.error('Error fetching investments:', error);
-      });
-  };
+  const fetchInvestments = useCallback(() => {
+    api
+      .get('/api/investments/')
+      .then((res) => setInvestments(res.data.results || []))
+      .catch((err) => console.error('investments', err));
+  }, []);
 
   useEffect(() => {
     fetchInvestments();
-  }, []);
+  }, [fetchInvestments]);
 
   return (
     <div>
@@ -31,14 +24,19 @@ function InvestmentList() {
         Investments
       </Typography>
       <AddInvestment refreshInvestments={fetchInvestments} />
-      {/* Render the list of investments */}
       <ul>
-        {investments.map((investment) => (
-          <li key={investment.id}>
-            {investment.name} ({investment.ticker}): Current Value: $
-            {investment.current_value ? investment.current_value.toFixed(2) : 'N/A'}
-          </li>
-        ))}
+        {investments.map((investment) => {
+          const currentValue = investment.current_value;
+          return (
+            <li key={investment.id}>
+              {investment.name} ({investment.ticker}) — invested $
+              {investment.amount_invested}
+              {currentValue != null
+                ? `, current value $${Number(currentValue).toFixed(2)}`
+                : ', current value unavailable'}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Typography, List, ListItem, ListItemText } from '@mui/material';
+
+import api from '../api';
 
 function Suggestions() {
   const [suggestions, setSuggestions] = useState([]);
 
   useEffect(() => {
-    axios.get('/api/suggestions/')
-      .then(res => {
-        setSuggestions(res.data.suggestions);
-      })
-      .catch(err => console.log(err));
+    api
+      .get('/api/suggestions/')
+      .then((res) => setSuggestions(res.data.results || []))
+      .catch((err) => console.error('suggestions', err));
   }, []);
 
   return (
@@ -20,9 +20,9 @@ function Suggestions() {
       </Typography>
       {suggestions.length > 0 ? (
         <List>
-          {suggestions.map((message, index) => (
-            <ListItem key={index}>
-              <ListItemText primary={message} />
+          {suggestions.map((s) => (
+            <ListItem key={s.id}>
+              <ListItemText primary={s.message} />
             </ListItem>
           ))}
         </List>

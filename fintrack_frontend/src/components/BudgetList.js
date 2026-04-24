@@ -1,24 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+
+import api from '../api';
 
 function BudgetList() {
   const [budgets, setBudgets] = useState([]);
 
   useEffect(() => {
-    axios.get('/api/budgets/')
-      .then(res => {
-        setBudgets(res.data);
-      })
-      .catch(err => {
-        console.log(err);
-      });
+    api
+      .get('/api/budgets/')
+      .then((res) => setBudgets(res.data.results || []))
+      .catch((err) => console.error('budgets', err));
   }, []);
 
   return (
     <div>
       <h2>Budgets</h2>
       <ul>
-        {budgets.map(budget => (
+        {budgets.map((budget) => (
           <li key={budget.id}>
             {budget.category}: ${budget.amount} per {budget.period}
           </li>

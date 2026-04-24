@@ -1,30 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Grid } from '@mui/material';
+
+import api from '../api';
 import SummaryCard from './SummaryCard';
 import ExpenseChart from './ExpenseChart';
 import Suggestions from './Suggestions';
-import axios from 'axios';
 
 function Dashboard() {
-  const [totalExpenses, setTotalExpenses] = useState(0);
-  const [totalInvestments, setTotalInvestments] = useState(0);
+  const [totalExpenses, setTotalExpenses] = useState('0.00');
+  const [totalInvestments, setTotalInvestments] = useState('0.00');
 
   useEffect(() => {
-    // Fetch total expenses
-    axios.get('/api/expenses/')
-      .then(res => {
-        const total = res.data.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+    api
+      .get('/api/expenses/')
+      .then((res) => {
+        const results = res.data.results || [];
+        const total = results.reduce(
+          (sum, expense) => sum + parseFloat(expense.amount || 0),
+          0,
+        );
         setTotalExpenses(total.toFixed(2));
       })
-      .catch(err => console.log(err));
+      .catch((err) => console.error('expenses', err));
 
-    // Fetch total investments
-    axios.get('/api/investments/')
-      .then(res => {
-        const total = res.data.reduce((sum, investment) => sum + parseFloat(investment.current_value), 0);
+    api
+      .get('/api/investments/')
+      .then((res) => {
+        const results = res.data.results || [];
+        // `current_value` is null when yfinance can't resolve the ticker
+        // (rate-limited from Render's shared IPs). Fall back to
+        // `amount_invested` so the summary isn't empty.
+        const total = results.reduce((sum, inv) => {
+          const value = inv.current_value ?? inv.amount_invested ?? 0;
+          return sum + parseFloat(value);
+        }, 0);
         setTotalInvestments(total.toFixed(2));
       })
-      .catch(err => console.log(err));
+      .catch((err) => console.error('investments', err));
   }, []);
 
   return (
@@ -39,7 +51,6 @@ function Dashboard() {
         <Grid item xs={12} sm={6} md={4}>
           <SummaryCard title="Total Investments" value={`$${totalInvestments}`} />
         </Grid>
-        {/* Add more SummaryCards as needed */}
       </Grid>
       <Grid container spacing={4} style={{ marginTop: '2rem' }}>
         <Grid item xs={12} md={6}>
