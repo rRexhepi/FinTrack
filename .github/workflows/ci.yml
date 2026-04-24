@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Django check + test
+    runs-on: ubuntu-latest
+
+    # Postgres service container — Django tests create `test_fintrack_db`
+    # on this instance. Port is bound to localhost so the test runner
+    # reaches it via the DB_* env vars below.
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: fintrack_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      SECRET_KEY: ci-only-not-a-real-secret
+      # DEBUG=True in CI avoids WhiteNoise's CompressedManifest storage
+      # tripping on a missing manifest during test setup. Production
+      # settings force DEBUG=False via the Render env.
+      DEBUG: "True"
+      DB_NAME: fintrack_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: localhost
+      DB_PORT: "5432"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install runtime deps
+        run: pip install -r requirements.txt
+
+      - name: Django system check
+        run: python manage.py check
+
+      - name: Run tests
+        # `--verbosity 2` prints test IDs so a failure is easy to find in
+        # the log; `--noinput` stops Django from prompting about the test
+        # DB on CI.
+        run: python manage.py test finance_app --verbosity 2 --noinput
