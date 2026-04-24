@@ -113,7 +113,7 @@ What a reviewer would expect from a full-stack Django portfolio project:
 - [ ] `yfinance` called outside model properties + cached per ticker
       (current `Investment.current_value` is a synchronous network call
       per instance — N+1 on the dashboard list)
-- [ ] Expanded test suite: investment serializer with mocked `yfinance`,
+- [x] Expanded test suite: investment serializer with mocked `yfinance`,
       validation edge cases, JWT flow
 - [x] GitHub Actions CI: ruff lint + Django check + test + Docker build
 - [x] Dockerfile + `docker-compose.yaml` (app + Postgres)
