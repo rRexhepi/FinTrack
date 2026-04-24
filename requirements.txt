@@ -1,0 +1,12 @@
+# Runtime dependencies for the FinTrack backend. CI and Docker install this
+# file; the dev container installs `requirements-dev.txt` on top.
+Django==5.1.2
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.3.1
+django-cors-headers==4.4.0
+whitenoise==6.7.0
+psycopg2-binary==2.9.9
+dj-database-url==2.2.0
+python-dotenv==1.0.1
+gunicorn==23.0.0
+yfinance==0.2.44
