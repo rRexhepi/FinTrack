@@ -15,7 +15,7 @@ class Expense(models.Model):
         verbose_name_plural = 'Expenses'
 
     def __str__(self):
-        return f"{self.category} - ${self.amount} on {self.date}"
+        return f"{self.category} - ${self.amount:.2f} on {self.date}"
 
 class Investment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='investments')
@@ -72,7 +72,7 @@ class Budget(models.Model):
         verbose_name_plural = 'Budgets'
 
     def __str__(self):
-        return f"{self.category} - ${self.amount} per {self.period}"
+        return f"{self.category} - ${self.amount:.2f} per {self.period}"
 
 class Suggestion(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='suggestions')
