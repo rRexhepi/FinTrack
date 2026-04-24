@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   test:
-    name: Django check + test
+    name: Lint + Django check + test
     runs-on: ubuntu-latest
 
     # Postgres service container — Django tests create `test_fintrack_db`
@@ -52,10 +52,15 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: requirements.txt
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
 
-      - name: Install runtime deps
-        run: pip install -r requirements.txt
+      - name: Install deps
+        run: pip install -r requirements-dev.txt
+
+      - name: Ruff
+        run: ruff check .
 
       - name: Django system check
         run: python manage.py check
