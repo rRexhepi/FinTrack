@@ -1,6 +1,6 @@
 # finance_app/tests.py
 
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -147,6 +148,138 @@ class ExpenseByCategoryTest(TestCase):
         self.client.force_authenticate(user=None)
         resp = self.client.get('/api/expenses/by-category/')
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class InvestmentAllocationTest(TestCase):
+    """`/api/investments/allocation/` — cost-basis by ticker for the donut."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='allocuser', password='x')
+        self.client.force_authenticate(user=self.user)
+
+    def test_groups_two_buys_of_same_ticker(self):
+        # Two AAPL positions and one MSFT. The chart wants one slice per
+        # ticker, not one per row.
+        Investment.objects.create(
+            user=self.user, name='Apple Inc.', ticker='AAPL',
+            amount_invested=Decimal('1000.00'), date_invested=date(2024, 1, 1),
+        )
+        Investment.objects.create(
+            user=self.user, name='Apple Inc.', ticker='AAPL',
+            amount_invested=Decimal('500.00'), date_invested=date(2024, 6, 1),
+        )
+        Investment.objects.create(
+            user=self.user, name='Microsoft Corp.', ticker='MSFT',
+            amount_invested=Decimal('750.00'), date_invested=date(2024, 3, 1),
+        )
+
+        resp = self.client.get('/api/investments/allocation/')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        by_ticker = {row['ticker']: row for row in resp.json()}
+        self.assertEqual(len(by_ticker), 2)
+        self.assertEqual(by_ticker['AAPL']['total'], 1500.0)
+        self.assertEqual(by_ticker['MSFT']['total'], 750.0)
+
+    def test_scoped_to_requesting_user(self):
+        Investment.objects.create(
+            user=self.user, name='Apple', ticker='AAPL',
+            amount_invested=Decimal('100.00'), date_invested=date(2024, 1, 1),
+        )
+        other = User.objects.create_user(username='not_me', password='x')
+        Investment.objects.create(
+            user=other, name='Apple', ticker='AAPL',
+            amount_invested=Decimal('9999.00'), date_invested=date(2024, 1, 1),
+        )
+        resp = self.client.get('/api/investments/allocation/')
+        self.assertEqual(resp.json()[0]['total'], 100.0)
+
+    def test_requires_auth(self):
+        self.client.force_authenticate(user=None)
+        resp = self.client.get('/api/investments/allocation/')
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class BudgetProgressTest(TestCase):
+    """`/api/budgets/progress/` — spent-this-period per budget."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='budgetuser2', password='x')
+        self.client.force_authenticate(user=self.user)
+
+    def test_monthly_budget_sums_month_to_date(self):
+        today = timezone.now().date()
+        first_of_month = today.replace(day=1)
+
+        Budget.objects.create(
+            user=self.user, category='Groceries',
+            amount=Decimal('500.00'), period='Monthly',
+        )
+        # In the current month — counted.
+        Expense.objects.create(
+            user=self.user, date=first_of_month,
+            category='Groceries', amount=Decimal('120.00'),
+        )
+        Expense.objects.create(
+            user=self.user, date=today,
+            category='Groceries', amount=Decimal('30.00'),
+        )
+        # Last month — excluded.
+        last_month = (first_of_month - timedelta(days=1))
+        Expense.objects.create(
+            user=self.user, date=last_month,
+            category='Groceries', amount=Decimal('9999.00'),
+        )
+        # Different category — excluded.
+        Expense.objects.create(
+            user=self.user, date=today,
+            category='Dining Out', amount=Decimal('40.00'),
+        )
+
+        resp = self.client.get('/api/budgets/progress/')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        rows = resp.json()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]['category'], 'Groceries')
+        self.assertEqual(rows[0]['amount'], 500.0)
+        self.assertEqual(rows[0]['spent'], 150.0)
+        self.assertEqual(rows[0]['window_start'], first_of_month.isoformat())
+
+    def test_budget_with_no_matching_expenses_reports_zero(self):
+        Budget.objects.create(
+            user=self.user, category='Travel',
+            amount=Decimal('300.00'), period='Monthly',
+        )
+        resp = self.client.get('/api/budgets/progress/')
+        self.assertEqual(resp.json()[0]['spent'], 0)
+
+    def test_requires_auth(self):
+        self.client.force_authenticate(user=None)
+        resp = self.client.get('/api/budgets/progress/')
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PeriodStartTest(TestCase):
+    """Unit test the budget-period helper; cheap, no DB."""
+
+    def test_daily(self):
+        from finance_app.views import _period_start
+        d = date(2024, 3, 15)
+        self.assertEqual(_period_start('Daily', d), d)
+
+    def test_weekly_returns_monday(self):
+        from finance_app.views import _period_start
+        # 2024-03-15 is a Friday → Monday is 2024-03-11.
+        self.assertEqual(_period_start('Weekly', date(2024, 3, 15)), date(2024, 3, 11))
+
+    def test_monthly_returns_first(self):
+        from finance_app.views import _period_start
+        self.assertEqual(_period_start('Monthly', date(2024, 3, 15)), date(2024, 3, 1))
+
+    def test_yearly_returns_jan_1(self):
+        from finance_app.views import _period_start
+        self.assertEqual(_period_start('Yearly', date(2024, 3, 15)), date(2024, 1, 1))
 
 
 class MarketDataTest(TestCase):

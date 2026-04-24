@@ -1,6 +1,6 @@
-from datetime import timedelta
+from datetime import date, timedelta
 
-from django.db.models import Sum
+from django.db.models import Min, Sum
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -56,6 +56,27 @@ class InvestmentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    @action(detail=False, methods=['get'])
+    def allocation(self, request):
+        # Cost-basis allocation by ticker — drives the dashboard donut.
+        # Grouping by ticker (not by row) so a user with two AAPL buys
+        # shows as one slice; `Min('name')` picks a stable display name.
+        rows = (
+            Investment.objects
+            .filter(user=request.user)
+            .values('ticker')
+            .annotate(total=Sum('amount_invested'), name=Min('name'))
+            .order_by('-total')
+        )
+        return Response([
+            {
+                'ticker': row['ticker'],
+                'name': row['name'],
+                'total': float(row['total']),
+            }
+            for row in rows
+        ])
+
     def list(self, request, *args, **kwargs):
         # Batch-fetch current prices for every ticker on the current page
         # so the serializer doesn't hit yfinance once per investment. This
@@ -76,6 +97,22 @@ class InvestmentViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+def _period_start(period: str, today: date) -> date:
+    """First day of the current budget window for a given cadence.
+
+    Keeping this module-level (not a method) so it's easy to unit-test
+    without standing up a Budget + user.
+    """
+    if period == 'Daily':
+        return today
+    if period == 'Weekly':
+        return today - timedelta(days=today.weekday())  # Monday
+    if period == 'Yearly':
+        return today.replace(month=1, day=1)
+    # Monthly is the fallback and the common case.
+    return today.replace(day=1)
+
+
 class BudgetViewSet(viewsets.ModelViewSet):
     serializer_class = BudgetSerializer
     permission_classes = [IsAuthenticated]
@@ -85,6 +122,36 @@ class BudgetViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['get'])
+    def progress(self, request):
+        # For each budget, how much has the user spent in that category
+        # during the current period. Drives the dashboard progress bars.
+        # The "current period" depends on the budget's cadence; see
+        # `_period_start`.
+        today = timezone.now().date()
+        out = []
+        for budget in self.get_queryset():
+            window_start = _period_start(budget.period, today)
+            spent = (
+                Expense.objects
+                .filter(
+                    user=request.user,
+                    category=budget.category,
+                    date__gte=window_start,
+                    date__lte=today,
+                )
+                .aggregate(total=Sum('amount'))['total']
+            ) or 0
+            out.append({
+                'id': budget.id,
+                'category': budget.category,
+                'period': budget.period,
+                'amount': float(budget.amount),
+                'spent': float(spent),
+                'window_start': window_start.isoformat(),
+            })
+        return Response(out)
 
 
 class SuggestionViewSet(viewsets.ReadOnlyModelViewSet):
