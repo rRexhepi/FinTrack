@@ -31,25 +31,33 @@ frontend, JWT auth, PostgreSQL.
 
 ## Quickstart
 
-### Backend
+### Backend (Docker — recommended)
 
 ```bash
 git clone https://github.com/rRexhepi/FinTrack.git
 cd FinTrack
 
-# 1. Virtualenv
+cp .env.example .env
+python get_secret.py >> .env       # generates a SECRET_KEY line
+docker compose up --build
+```
+
+`docker-compose.yaml` boots Postgres 15, applies migrations, and starts
+gunicorn on `http://127.0.0.1:8000/api/`.
+
+### Backend (native)
+
+```bash
 python3 -m venv venv
 source venv/bin/activate          # or venv\Scripts\activate on Windows
 pip install -r requirements.txt
 
-# 2. Environment
 cp .env.example .env
 python get_secret.py >> .env       # generates a SECRET_KEY line
 
-# 3. Database — make sure Postgres is running and the DB from .env exists.
+# Make sure Postgres is running and the DB from .env exists.
 createdb fintrack_db
 
-# 4. Migrate + run
 python manage.py migrate
 python manage.py runserver
 ```
@@ -107,8 +115,9 @@ What a reviewer would expect from a full-stack Django portfolio project:
       per instance — N+1 on the dashboard list)
 - [ ] Expanded test suite: investment serializer with mocked `yfinance`,
       validation edge cases, JWT flow
-- [ ] GitHub Actions CI: Django check + test + lint
-- [ ] Dockerfile + `docker-compose.yaml` (app + Postgres)
+- [x] GitHub Actions CI: Django check + test (+ Docker build)
+- [x] Dockerfile + `docker-compose.yaml` (app + Postgres)
+- [ ] Lint (ruff) added to CI
 
 ## License
 

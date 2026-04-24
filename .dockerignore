@@ -1,0 +1,48 @@
+# Mirrors .gitignore; anything in here gets stripped from the build context.
+.git/
+.github/
+.gitignore
+
+# Virtualenvs + bytecode
+venv/
+.venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Test / lint caches
+.pytest_cache/
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Secrets + logs
+.env
+.env.*
+*.log
+!.env.example
+
+# Local Django artefacts
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+media/
+
+# Frontend (built separately / served elsewhere for now)
+fintrack_frontend/node_modules/
+fintrack_frontend/build/
+fintrack_frontend/dist/
+
+# Editor / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
