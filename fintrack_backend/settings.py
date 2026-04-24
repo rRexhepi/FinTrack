@@ -140,5 +140,16 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,  # Set the number of items per page
 }
 
+# Cache backend used by `finance_app.market_data` to memoise yfinance
+# responses. `LocMemCache` is per-process — fine for dev and gunicorn
+# with a handful of workers; swap for Redis (`django.core.cache.backends.redis`)
+# once a shared cache matters.
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'fintrack-default',
+    }
+}
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
