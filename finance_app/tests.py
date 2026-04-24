@@ -293,3 +293,41 @@ class JWTAuthTests(TestCase):
             format='json',
         )
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class SeedDemoCommandTest(TestCase):
+    """`seed_demo` creates a user + data on first run and is idempotent."""
+
+    def _run(self, **opts):
+        from django.core.management import call_command
+        call_command('seed_demo', **opts)
+
+    def test_seeds_user_and_counts(self):
+        self._run()
+        demo = User.objects.get(username='demo')
+        self.assertTrue(demo.is_superuser)
+        self.assertTrue(demo.check_password('demopass123'))
+        self.assertEqual(demo.expenses.count(), 14)
+        self.assertEqual(demo.investments.count(), 5)
+        self.assertEqual(demo.budgets.count(), 4)
+        self.assertEqual(demo.suggestions.count(), 1)
+
+    def test_rerun_is_noop(self):
+        self._run()
+        self._run()  # second call should skip
+        self.assertEqual(User.objects.filter(username='demo').count(), 1)
+        self.assertEqual(
+            Expense.objects.filter(user__username='demo').count(), 14
+        )
+
+    def test_force_wipes_and_reseeds(self):
+        self._run()
+        Expense.objects.filter(user__username='demo').update(amount=Decimal('1'))
+        self._run(force=True)
+        # `force` path reseeds with original amounts, no 1.00 stragglers.
+        self.assertFalse(
+            Expense.objects.filter(user__username='demo', amount=Decimal('1')).exists()
+        )
+        self.assertEqual(
+            Expense.objects.filter(user__username='demo').count(), 14
+        )
