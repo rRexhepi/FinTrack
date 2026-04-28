@@ -37,7 +37,7 @@ function InvestmentChart() {
         const rows = Array.isArray(res.data) ? res.data : [];
         setData(
           rows.map((row) => ({
-            // Label uses ticker — punchy, fits legends; tooltip has the full name.
+            // Label uses ticker, fits legends. Tooltip has the full name.
             name: row.ticker,
             fullName: row.name,
             value: Number(row.total),

@@ -4,9 +4,6 @@ A personal-finance dashboard: track expenses, plan budgets, and monitor
 investments with real-time market data. Django REST backend + React
 frontend, JWT auth, PostgreSQL.
 
-> **Status:** portfolio project. Backend and frontend run end-to-end;
-> rolling cleanup underway — see [Roadmap](#roadmap).
-
 ## Stack
 
 | Layer | Tech |
@@ -31,7 +28,7 @@ frontend, JWT auth, PostgreSQL.
 
 ## Quickstart
 
-### Backend (Docker — recommended)
+### Backend (Docker, recommended)
 
 ```bash
 git clone https://github.com/rRexhepi/FinTrack.git
@@ -81,9 +78,9 @@ See [`.env.example`](.env.example) for the full list.
 
 | Var | Purpose | Default |
 |---|---|---|
-| `SECRET_KEY` | Django secret key | *(required in production)* |
+| `SECRET_KEY` | Django secret key | (required in production) |
 | `DEBUG` | Django debug mode | `True` |
-| `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `DB_HOST` / `DB_PORT` | Postgres connection | `fintrack_db` / `postgres` / *(empty)* / `localhost` / `5432` |
+| `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `DB_HOST` / `DB_PORT` | Postgres connection | `fintrack_db` / `postgres` / (empty) / `localhost` / `5432` |
 
 ## Tests
 
@@ -99,7 +96,7 @@ validation edge cases) is on the roadmap.
 ## Deployment
 
 `Procfile` runs `gunicorn fintrack_backend.wsgi`. The production target
-is Render — see `ALLOWED_HOSTS` in `fintrack_backend/settings.py`. On
+is Render. See `ALLOWED_HOSTS` in `fintrack_backend/settings.py`. On
 deploy, run `python manage.py collectstatic --noinput` so WhiteNoise
 has the manifest it needs.
 
@@ -112,7 +109,7 @@ What a reviewer would expect from a full-stack Django portfolio project:
 - [x] Proper `.gitignore` (Python + Django + Node)
 - [ ] `yfinance` called outside model properties + cached per ticker
       (current `Investment.current_value` is a synchronous network call
-      per instance — N+1 on the dashboard list)
+      per instance, N+1 on the dashboard list)
 - [x] Expanded test suite: investment serializer with mocked `yfinance`,
       validation edge cases, JWT flow
 - [x] GitHub Actions CI: ruff lint + Django check + test + Docker build
@@ -121,4 +118,4 @@ What a reviewer would expect from a full-stack Django portfolio project:
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).

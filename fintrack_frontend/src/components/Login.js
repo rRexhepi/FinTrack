@@ -48,7 +48,7 @@ function Login() {
           Sign in to FinTrack
         </Typography>
         <Alert severity="info" sx={{ mb: 2 }}>
-          Public demo — sign in with <strong>{DEMO_USERNAME}</strong>&nbsp;/&nbsp;
+          Public demo. Sign in with <strong>{DEMO_USERNAME}</strong>&nbsp;/&nbsp;
           <strong>{DEMO_PASSWORD}</strong>.
         </Alert>
         <Box component="form" onSubmit={handleSubmit} noValidate>

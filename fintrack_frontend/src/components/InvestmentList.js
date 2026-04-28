@@ -27,7 +27,7 @@ function returnCell(investment) {
   const current = investment.current_value;
   const cost = Number(investment.amount_invested || 0);
   if (current == null) {
-    // yfinance couldn't resolve the ticker — `null` means unavailable,
+    // yfinance couldn't resolve the ticker. `null` means unavailable,
     // not zero. Render a dash rather than a fake 0%.
     return (
       <Typography variant="body2" color="text.secondary">

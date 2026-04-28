@@ -3,7 +3,7 @@ line-length = 100
 target-version = "py311"
 # Auto-generated Django migrations use Django's own style (long lines,
 # single-line lambdas in field definitions). Linting them fights the
-# generator. The frontend is JS, not Python — ruff ignores it anyway
+# generator. The frontend is JS, not Python, ruff ignores it anyway
 # but the explicit exclude keeps the intent clear.
 extend-exclude = [
     "finance_app/migrations/",
@@ -22,5 +22,5 @@ select = [
     "I",   # isort
 ]
 ignore = [
-    "E501",  # line length — formatter handles this
+    "E501",  # line length, formatter handles this
 ]

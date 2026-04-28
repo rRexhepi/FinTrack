@@ -33,7 +33,7 @@ function Dashboard() {
       .get('/api/investments/allocation/')
       .then((res) => {
         const rows = Array.isArray(res.data) ? res.data : [];
-        // Falls back to cost basis — `current_value` needs yfinance,
+        // Falls back to cost basis. `current_value` needs yfinance,
         // which is rate-limited from Render's shared IPs. The allocation
         // endpoint gives us cost-basis totals that are always available.
         const total = rows.reduce((sum, r) => sum + Number(r.total || 0), 0);

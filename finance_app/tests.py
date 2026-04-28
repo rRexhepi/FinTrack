@@ -115,7 +115,7 @@ class PaginationTest(TestCase):
         self.assertEqual(len(resp.json()['results']), 25)
 
     def test_page_size_capped_at_max(self):
-        # `max_page_size = 100` — asking for more doesn't blow that up,
+        # `max_page_size = 100`, asking for more doesn't blow that up,
         # just silently clamps. (DRF's behaviour: returns `max_page_size`
         # rows, not an error.)
         resp = self.client.get(reverse('expense-list') + '?page_size=9999')
@@ -130,7 +130,7 @@ class ExpenseByCategoryTest(TestCase):
         self.user = User.objects.create_user(username='chartuser', password='x')
         self.client.force_authenticate(user=self.user)
 
-        # 12 expenses across 3 categories — deliberately more than the
+        # 12 expenses across 3 categories, deliberately more than the
         # default PAGE_SIZE (10) so a broken implementation that read the
         # paginated list would miss rows on page 2.
         rows = [
@@ -159,8 +159,8 @@ class ExpenseByCategoryTest(TestCase):
         resp = self.client.get('/api/expenses/by-category/')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         totals = {row['category']: row['total'] for row in resp.json()}
-        # 265 total for Groceries across 6 rows — spanning the paginated
-        # page boundary is the whole point of this endpoint.
+        # 265 total for Groceries across 6 rows, spanning the paginated
+        # page boundary is what this endpoint exists to handle.
         self.assertEqual(totals, {
             'Groceries': 265.0,
             'Dining Out': 120.0,
@@ -184,7 +184,7 @@ class ExpenseByCategoryTest(TestCase):
 
 
 class InvestmentAllocationTest(TestCase):
-    """`/api/investments/allocation/` — cost-basis by ticker for the donut."""
+    """`/api/investments/allocation/`, cost-basis by ticker for the donut."""
 
     def setUp(self):
         self.client = APIClient()
@@ -234,7 +234,7 @@ class InvestmentAllocationTest(TestCase):
 
 
 class BudgetProgressTest(TestCase):
-    """`/api/budgets/progress/` — spent-this-period per budget."""
+    """`/api/budgets/progress/`, spent-this-period per budget."""
 
     def setUp(self):
         self.client = APIClient()
@@ -249,7 +249,7 @@ class BudgetProgressTest(TestCase):
             user=self.user, category='Groceries',
             amount=Decimal('500.00'), period='Monthly',
         )
-        # In the current month — counted.
+        # In the current month, counted.
         Expense.objects.create(
             user=self.user, date=first_of_month,
             category='Groceries', amount=Decimal('120.00'),
@@ -258,13 +258,13 @@ class BudgetProgressTest(TestCase):
             user=self.user, date=today,
             category='Groceries', amount=Decimal('30.00'),
         )
-        # Last month — excluded.
+        # Last month, excluded.
         last_month = (first_of_month - timedelta(days=1))
         Expense.objects.create(
             user=self.user, date=last_month,
             category='Groceries', amount=Decimal('9999.00'),
         )
-        # Different category — excluded.
+        # Different category, excluded.
         Expense.objects.create(
             user=self.user, date=today,
             category='Dining Out', amount=Decimal('40.00'),
@@ -294,7 +294,7 @@ class BudgetProgressTest(TestCase):
 
 
 class PeriodStartTest(TestCase):
-    """Unit test the budget-period helper; cheap, no DB."""
+    """Unit test the budget-period helper. Cheap, no DB."""
 
     def test_daily(self):
         from finance_app.views import _period_start
@@ -382,7 +382,7 @@ class MarketDataTest(TestCase):
         self.assertEqual(yf_ticker.call_count, 2)
 
     def test_price_on_date_falls_back_to_prior_trading_day(self):
-        # Target date is a Sunday; yfinance returns Thursday + Friday and
+        # Target date is a Sunday. yfinance returns Thursday + Friday and
         # the module must pick the latest close on or before the target.
         fake = self._fake_history([150.0, 152.0], ['2024-01-04', '2024-01-05'])
         ticker_mock = MagicMock()
@@ -448,7 +448,7 @@ class InvestmentAPITests(TestCase):
             response = self.client.get(reverse('investment-list'))
 
         row = response.json()['results'][0]
-        # 1000 purchased / 100 per share = 10 shares; 10 × 200 = 2000.
+        # 1000 purchased / 100 per share = 10 shares. 10 × 200 = 2000.
         self.assertAlmostEqual(row['current_value'], 2000.0)
 
     def test_list_returns_null_current_value_when_ticker_unresolvable(self):
@@ -514,7 +514,7 @@ class JWTAuthTests(TestCase):
         self.assertIn('access', body)
         self.assertIn('refresh', body)
 
-        # Use the access token to hit a protected endpoint — no session,
+        # Use the access token to hit a protected endpoint, no session,
         # just the Authorization header, the way a real SPA would.
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {body['access']}")
         protected = self.client.get(reverse('expense-list'))

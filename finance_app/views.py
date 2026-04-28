@@ -58,9 +58,9 @@ class InvestmentViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def allocation(self, request):
-        # Cost-basis allocation by ticker — drives the dashboard donut.
+        # Cost-basis allocation by ticker, drives the dashboard donut.
         # Grouping by ticker (not by row) so a user with two AAPL buys
-        # shows as one slice; `Min('name')` picks a stable display name.
+        # shows as one slice. `Min('name')` picks a stable display name.
         rows = (
             Investment.objects
             .filter(user=request.user)
@@ -80,8 +80,8 @@ class InvestmentViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         # Batch-fetch current prices for every ticker on the current page
         # so the serializer doesn't hit yfinance once per investment. This
-        # is the whole point of the refactor that extracted yfinance out
-        # of `Investment`'s model properties.
+        # is what the refactor that extracted yfinance out of
+        # `Investment`'s model properties was for.
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
         objects = page if page is not None else list(queryset)
@@ -127,7 +127,7 @@ class BudgetViewSet(viewsets.ModelViewSet):
     def progress(self, request):
         # For each budget, how much has the user spent in that category
         # during the current period. Drives the dashboard progress bars.
-        # The "current period" depends on the budget's cadence; see
+        # The "current period" depends on the budget's cadence. See
         # `_period_start`.
         today = timezone.now().date()
         out = []

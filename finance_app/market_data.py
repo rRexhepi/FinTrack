@@ -2,7 +2,7 @@
 
 Before this module, ``Investment.current_value`` and
 ``Investment.purchase_price_per_share`` called
-``yf.Ticker(...).history(...)`` inside property access — so rendering a
+``yf.Ticker(...).history(...)`` inside property access, so rendering a
 list of N investments triggered 2N synchronous HTTP round-trips to
 Yahoo on every request, and re-opening the dashboard one second later
 did it all over again.
@@ -10,10 +10,10 @@ did it all over again.
 Centralising the fetch here lets us:
 
 * cache current prices for a few minutes and historical prices for a
-  day (historical data is, for our purposes, immutable);
+  day (historical data is, for our purposes, immutable).
 * batch current-price lookups for a dashboard page with
   :func:`get_current_prices`, so the viewset can pass a pre-warmed
-  ``{ticker: price}`` dict down through serializer context;
+  ``{ticker: price}`` dict down through serializer context.
 * keep the network boundary out of the model layer, where attribute
   access looks cheap but wasn't.
 """
@@ -30,15 +30,15 @@ from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
-CURRENT_PRICE_TTL = 300  # 5 min — balance freshness against rate limits.
+CURRENT_PRICE_TTL = 300  # 5 min, balance freshness against rate limits.
 FAILURE_TTL = 60  # negative-cache a failed lookup so every dashboard
 #                   page load doesn't eat another yfinance timeout per
 #                   ticker when Yahoo's rate-limiting our IP.
-HISTORICAL_PRICE_TTL = 24 * 60 * 60  # 24 hr — historical closes don't move.
+HISTORICAL_PRICE_TTL = 24 * 60 * 60  # 24 hr, historical closes don't move.
 _PRICE_WINDOW_DAYS = 5  # pad historical fetch to dodge market holidays.
 
 # Sentinel that lets us distinguish "nothing cached yet" from "we cached
-# a failure (None) last time" — `cache.get` returns None for both by
+# a failure (None) last time". `cache.get` returns None for both by
 # default, which is the reason this module kept re-hitting yfinance.
 _CACHE_MISS = object()
 
@@ -56,7 +56,7 @@ def _to_decimal(value) -> Decimal | None:
         result = Decimal(str(value))
     except (InvalidOperation, TypeError, ValueError):
         return None
-    # yfinance returns NaN for missing closes; Decimal('NaN') parses fine
+    # yfinance returns NaN for missing closes. Decimal('NaN') parses fine
     # but arithmetic on it blows up downstream.
     if result.is_nan():
         return None
@@ -64,7 +64,7 @@ def _to_decimal(value) -> Decimal | None:
 
 
 def get_current_price(ticker: str) -> Decimal | None:
-    """Latest close price for ``ticker``; ``None`` if unavailable."""
+    """Latest close price for ``ticker``, or ``None`` if unavailable."""
     if not ticker:
         return None
     key = _current_cache_key(ticker)
@@ -91,7 +91,7 @@ def get_current_price(ticker: str) -> Decimal | None:
 def get_current_prices(tickers: Iterable[str]) -> dict[str, Decimal]:
     """Best-effort ``{ticker: latest_close}`` map for a batch.
 
-    Tickers that fail to resolve are dropped silently — the caller
+    Tickers that fail to resolve are dropped silently. The caller
     decides how to present a missing price to the user.
     """
     out: dict[str, Decimal] = {}

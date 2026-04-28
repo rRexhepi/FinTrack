@@ -14,7 +14,7 @@ jobs:
     name: Lint + Django check + test
     runs-on: ubuntu-latest
 
-    # Postgres service container — Django tests create `test_fintrack_db`
+    # Postgres service container. Django tests create `test_fintrack_db`
     # on this instance. Port is bound to localhost so the test runner
     # reaches it via the DB_* env vars below.
     services:

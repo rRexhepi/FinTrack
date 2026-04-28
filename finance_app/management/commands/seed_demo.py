@@ -60,7 +60,7 @@ class Command(BaseCommand):
         elif user.expenses.exists() or user.investments.exists():
             self.stdout.write(
                 self.style.NOTICE(
-                    f"User '{username}' already has data; pass --force to re-seed."
+                    f"User '{username}' already has data. Pass --force to re-seed."
                 )
             )
             return
@@ -68,7 +68,7 @@ class Command(BaseCommand):
         today = date.today()
 
         expenses = [
-            ('Groceries',      '128.47', 1,  'Weekly shop — produce + pantry'),
+            ('Groceries',      '128.47', 1,  'Weekly shop, produce + pantry'),
             ('Dining Out',     '42.10',  2,  'Ramen with M.'),
             ('Transportation', '52.00',  3,  'Gas'),
             ('Groceries',      '76.82',  6,  'Costco run'),
@@ -124,11 +124,11 @@ class Command(BaseCommand):
         ])
 
         suggestion_messages = [
-            "Groceries is your largest recurring category — batching a weekend "
+            "Groceries is your largest recurring category. Batching a weekend "
             "haul rather than topping up mid-week tends to cut the total.",
             "Dining Out is pacing close to its budget. Not alarming yet, but "
             "worth keeping an eye on before weekend plans land.",
-            "Entertainment is comfortably under budget — you've got headroom "
+            "Entertainment is comfortably under budget. You've got headroom "
             "for a night out without denting the rest of the month.",
         ]
         Suggestion.objects.bulk_create([

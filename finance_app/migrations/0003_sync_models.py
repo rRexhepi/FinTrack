@@ -4,17 +4,17 @@ The committed migrations (0001 + 0002) drifted out of sync with
 `finance_app/models.py`:
 
 * `Expense` gained `user` (FK), `db_index=True` on `date` and `category`,
-  `blank=True` on `description`, and a `Meta.ordering` / `verbose_name_plural`;
+  `blank=True` on `description`, and a `Meta.ordering` / `verbose_name_plural`.
 * `Investment` gained `related_name='investments'` on its `user` FK and
-  `Meta.ordering` / `verbose_name_plural`;
+  `Meta.ordering` / `verbose_name_plural`.
 * `Budget` tightened `period.max_length` from 50 to 10, added
   `choices=...`, and picked up `related_name='budgets'` +
-  `verbose_name_plural`;
+  `verbose_name_plural`.
 * `Suggestion` is a whole new model that was never migrated.
 
 Running a fresh `python manage.py migrate` before this migration lands
 left the DB schema unable to satisfy any `Expense.objects.create(...)`
-call that passed `user=...` — which CI surfaced by failing with
+call that passed `user=...`, which CI surfaced by failing with
 `column "user_id" of relation "finance_app_expense" does not exist`.
 """
 

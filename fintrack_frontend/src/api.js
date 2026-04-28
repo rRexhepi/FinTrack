@@ -25,7 +25,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     // Token expired or otherwise bad. Clear and bounce to login.
-    // Skip the redirect on the /api/token/ endpoint itself — bad creds
+    // Skip the redirect on the /api/token/ endpoint itself. Bad creds
     // there should surface as a form error, not a redirect loop.
     const url = error.config?.url || '';
     if (error.response?.status === 401 && !url.includes('/api/token/')) {

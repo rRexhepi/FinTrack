@@ -89,8 +89,8 @@ TEMPLATES = [
 WSGI_APPLICATION = 'fintrack_backend.wsgi.application'
 
 # Database Configuration
-# Prefer DATABASE_URL (Render, docker-compose, Heroku-style) when set;
-# fall back to split DB_* vars for local dev without a URL handy.
+# Prefer DATABASE_URL (Render, docker-compose, Heroku-style) when set.
+# Fall back to split DB_* vars for local dev without a URL handy.
 if os.getenv('DATABASE_URL'):
     DATABASES = {
         'default': dj_database_url.config(
@@ -159,8 +159,8 @@ REST_FRAMEWORK = {
 }
 
 # Cache backend used by `finance_app.market_data` to memoise yfinance
-# responses. `LocMemCache` is per-process — fine for dev and gunicorn
-# with a handful of workers; swap for Redis (`django.core.cache.backends.redis`)
+# responses. `LocMemCache` is per-process, fine for dev and gunicorn
+# with a handful of workers. Swap for Redis (`django.core.cache.backends.redis`)
 # once a shared cache matters.
 CACHES = {
     'default': {

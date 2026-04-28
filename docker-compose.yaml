@@ -21,7 +21,7 @@ services:
     environment:
       # The API refuses to boot if this isn't set. Generate your own
       # with `python get_secret.py` and drop it in `.env`.
-      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set — see .env.example}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set, see .env.example}
       DEBUG: ${DEBUG:-False}
       DB_NAME: ${DB_NAME:-fintrack_db}
       DB_USER: ${DB_USER:-postgres}
@@ -36,7 +36,7 @@ services:
       db:
         condition: service_healthy
     # Apply pending migrations, then hand off to the image's CMD
-    # (gunicorn). Idempotent — safe to re-run on every container start.
+    # (gunicorn). Idempotent, safe to re-run on every container start.
     command: >-
       sh -c "python manage.py migrate --noinput &&
              gunicorn fintrack_backend.wsgi:application

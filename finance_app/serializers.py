@@ -20,9 +20,9 @@ class ExpenseSerializer(serializers.ModelSerializer):
 
 class InvestmentSerializer(serializers.ModelSerializer):
     # Computed from yfinance via `market_data`. List endpoints pre-warm a
-    # batch via serializer context (see InvestmentViewSet.list); detail
+    # batch via serializer context (see InvestmentViewSet.list). Detail
     # endpoints fall back to the cached single-ticker lookup. `None` here
-    # means yfinance couldn't resolve the ticker — the frontend should
+    # means yfinance couldn't resolve the ticker, so the frontend should
     # render a dash rather than a zero.
     current_value = serializers.SerializerMethodField()
 
